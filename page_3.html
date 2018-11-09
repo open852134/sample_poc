@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+
+
+  <link rel="stylesheet" href="./assets/css/all.css">
+
+  <style>
+    .show-block {
+      position: fixed;
+      display: inline-blockl
+    }
+
+    .node circle {
+      fill: #fff;
+      stroke: steelblue;
+      stroke-width: 3px;
+    }
+
+    .node text {
+      font: 12px sans-serif;
+    }
+
+    .link {
+      fill: none;
+      stroke: #ccc;
+      stroke-width: 2px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <img src="/assets/svg/4idps.svg" alt="">
+  </header>
+
+  <div class="row">
+    <div class="grid-12">
+      <div class="tab">
+        <a href="page_1.html" class="tablinks">Page1</a>
+        <a href="page_2.html" class="tablinks">Page2</a>
+        <a href="page_3.html" class="tablinks">Page3</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="grid-12">
+      <h3>Default Data</h3>
+      <div class="table-block" id="chart1-block">
+        <table class="table"></table>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="row">
+    <div class="grid-12">
+      <h3>Chart Demo - 1</h3>
+      <div class="chart-block">
+        <svg id="chart1"></svg>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="row">
+    <div class="grid-12">
+      <h3>Chart Demo - 2</h3>
+      <div class="chart-block">
+        <svg id="chart2"></svg>
+      </div>
+    </div>
+  </div>
+
+
+</body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://d3js.org/d3-selection.v1.js"></script>
+<script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
+<script src="https://d3js.org/d3-transition.v1.min.js"></script>
+<script src="https://d3js.org/d3-color.v1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/locale/zh-tw.js"></script> -->
+<script>
+  var filePath = './assets/csv/raw_data-3-bk.csv';
+  var defaul_data = [];
+  d3.csv(filePath).then(function (data) {
+
+    defaul_data = data;
+
+    var sortAscending = true;
+    var table = d3.select('.table');
+    var titles = d3.keys(data[0]);
+    var headers = table.append('thead').append('tr')
+      .selectAll('th')
+      .data(titles).enter()
+      .append('th')
+      .text(function (d) {
+        return d;
+      })
+
+    var rows = table.append('tbody').selectAll('tr')
+      .data(data).enter()
+      .append('tr');
+    rows.selectAll('td')
+      .data(function (d) {
+        return titles.map(function (k) {
+          return {
+            'value': d[k],
+            'name': k
+          };
+        });
+      }).enter()
+      .append('td')
+      .attr('data-th', function (d) {
+        return d.name;
+      })
+      .text(function (d) {
+        return d.value;
+      });
+  });
+
+
+
+
+
+
+  function Get_Chart1_Data() {
+    var result = {};
+
+    result.name = 'Company';
+    result.children = [];
+
+    for (let i = 0; i < defaul_data.length; i++) {
+
+      var isHaved = false;
+      var index = 0;
+
+      for (let j = 0; j < result.children.length; j++) {
+        if (result.children[j].name == defaul_data[i]['Requesting　Dept']) {
+          isHaved = true;
+          index = j
+        }
+      }
+
+      if (isHaved) {
+        result.children[index].children.push({
+          name: defaul_data[i]['Item Descripton'],
+        })
+      } else {
+
+        var tmpObj = {
+          name: defaul_data[i]['Requesting　Dept'],
+          children: [{
+            name: defaul_data[i]['Item Descripton']
+          }]
+        }
+
+        result.children.push(tmpObj);
+
+
+        // if( i == 0 ){
+        //   var tmpObj = {
+        //     name: defaul_data[i]['Requesting　Dept'],
+        //     children: [{
+        //       name: defaul_data[i]['Item Descripton'],
+        //       detail : [
+        //         {name: 'Invoice Number => ' +defaul_data[i]['Invoice Number']},
+        //         {name: 'Parts Number => ' + defaul_data[i]['Parts Number']},
+        //         {name: 'Item Descripton => ' +defaul_data[i]['Item Descripton']},
+        //         {name: 'Qty => ' + defaul_data[i]['Qty']}
+        //       ]
+        //     }]
+        //   }
+        // }
+      }
+    }
+    return result;
+  }
+
+
+
+  function Get_Chart2_Data() {
+    var result = [];
+
+    for (let i = 0; i < defaul_data.length; i++) {
+
+      var isHaved = false;
+      var index = 0;
+      var tmObj = {};
+
+      for (let j = 0; j < result.length; j++) {
+        if (result[j].Name == defaul_data[i]['Requesting　Dept']) {
+          isHaved = true;
+          index = j
+        }
+      }
+
+      if (!isHaved) {
+        tmObj.Name = defaul_data[i]['Requesting　Dept'];
+        tmObj.Count = 1;
+
+        result.push(tmObj);
+      } else {
+        result[index].Count += 1;
+      }
+    }
+
+    return result;
+  }
+
+
+
+
+  /*
+    回傳格式
+    [
+      {
+        day:'2017-05',
+        count:10,
+        detail:['xxxx',aaaa]
+      },
+    ]
+  */
+  function Get_Chart3_Data() {
+    var result = [];
+
+    for (let i = 0; i < defaul_data.length; i++) {
+      if (defaul_data[i]['FLT Date'] != '') {
+
+        var tm_pnumber = defaul_data[i]['Parts Number'];
+        var tm_date = defaul_data[i]['FLT Date'].split('/');
+        var orgin_year = tm_date[2].padStart(4, "20");
+        var orgin_month = tm_date[0].padStart(2, "0");
+        var rdate = orgin_year + '-' + orgin_month;
+        var isHaved = false;
+        var index = 0;
+
+        for (let j = 0; j < result.length; j++) {
+          if (result[j].day == rdate) {
+            isHaved = true;
+            index = j
+          }
+        }
+
+        var tmpobj = {
+          day: '',
+          count: 0,
+          detail: [],
+        };
+        if (!isHaved) {
+          tmpobj.day = rdate;
+          tmpobj.count = 1;
+          tmpobj.detail.push(tm_pnumber);
+
+          result.push(tmpobj);
+        } else {
+          result[index].count += 1;
+          result[index].detail.push(tm_pnumber);
+        }
+
+      }
+    }
+
+    return result;
+  }
+
+  // var treeData = {
+  //   "name": "Main Product",
+  //   "children": [{
+  //       "name": "Level 2: A",
+  //       "children": [{
+  //           "name": "Son of A"
+  //         },
+  //         {
+  //           "name": "Daughter of A"
+  //         }
+  //       ]
+  //     },
+  //     {
+  //       "name": "Level 2: B"
+  //     }
+  //   ]
+  // };
+
+
+
+  setTimeout(function () {
+
+    var treeData = Get_Chart1_Data();
+
+    // Set the dimensions and margins of the diagram
+    var margin = {
+      top: 15,
+      right: 20,
+      bottom: 15,
+      left: 20
+    };
+    var width = $('#chart1').parent().width() - 50;
+    var height = $('#chart1').parent().height() - 50;
+
+    // append the svg object to the body of the page
+    // appends a 'group' element to 'svg'
+    // moves the 'group' element to the top left margin
+    var svg = d3.select("#chart1")
+      .attr("width", width)
+      .attr("height", height)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var i = 0,
+      duration = 750,
+      root;
+
+    // declares a tree layout and assigns the size
+    var treemap = d3.tree().size([height, width]);
+
+    // Assigns parent, children, height, depth
+    root = d3.hierarchy(treeData, function (d) {
+      return d.children;
+    });
+    root.x0 = height / 2;
+    root.y0 = 0;
+
+    // Collapse after the second level
+    //root.children.forEach(collapse);
+
+    update(root);
+
+    // Collapse the node and all it's children
+    // function collapse(d) {
+    //   if(d.children) {
+    //     d._children = d.children
+    //     d._children.forEach(collapse)
+    //     d.children = null
+    //   }
+    // }
+
+    function update(source) {
+
+      // Assigns the x and y position for the nodes
+      var treeData = treemap(root);
+
+      // Compute the new tree layout.
+      var nodes = treeData.descendants(),
+        links = treeData.descendants().slice(1);
+
+      // Normalize for fixed-depth.
+      nodes.forEach(function (d) {
+        d.y = d.depth * 180
+      });
+
+      // ****************** Nodes section ***************************
+
+      // Update the nodes...
+      var node = svg.selectAll('g.node')
+        .data(nodes, function (d) {
+          return d.id || (d.id = ++i);
+        });
+
+      // Enter any new modes at the parent's previous position.
+      var nodeEnter = node.enter().append('g')
+        .attr('class', 'node')
+        .attr("transform", function (d) {
+          return "translate(" + source.y0 + "," + source.x0 + ")";
+        })
+        .on('click', click);
+
+      // Add Circle for the nodes
+      nodeEnter.append('circle')
+        .attr('class', 'node')
+        .attr('r', 1e-6)
+        .style("fill", function (d) {
+          return d._children ? "lightsteelblue" : "#fff";
+        });
+
+      // Add labels for the nodes
+      nodeEnter.append('text')
+        .attr("dy", ".35em")
+        .attr("x", function (d) {
+          return d.children || d._children ? -13 : 13;
+        })
+        .attr("text-anchor", function (d) {
+          return d.children || d._children ? "end" : "start";
+        })
+        .text(function (d) {
+          return d.data.name;
+        });
+
+      // UPDATE
+      var nodeUpdate = nodeEnter.merge(node);
+
+      // Transition to the proper position for the node
+      nodeUpdate.transition()
+        .duration(duration)
+        .attr("transform", function (d) {
+          return "translate(" + d.y + "," + d.x + ")";
+        });
+
+      // Update the node attributes and style
+      nodeUpdate.select('circle.node')
+        .attr('r', 10)
+        .style("fill", function (d) {
+          return d._children ? "lightsteelblue" : "#fff";
+        })
+        .attr('cursor', 'pointer');
+
+
+      // Remove any exiting nodes
+      var nodeExit = node.exit().transition()
+        .duration(duration)
+        .attr("transform", function (d) {
+          return "translate(" + source.y + "," + source.x + ")";
+        })
+        .remove();
+
+      // On exit reduce the node circles size to 0
+      nodeExit.select('circle')
+        .attr('r', 1e-6);
+
+      // On exit reduce the opacity of text labels
+      nodeExit.select('text')
+        .style('fill-opacity', 1e-6);
+
+      // ****************** links section ***************************
+
+      // Update the links...
+      var link = svg.selectAll('path.link')
+        .data(links, function (d) {
+          return d.id;
+        });
+
+      // Enter any new links at the parent's previous position.
+      var linkEnter = link.enter().insert('path', "g")
+        .attr("class", "link")
+        .attr('d', function (d) {
+          var o = {
+            x: source.x0,
+            y: source.y0
+          }
+          return diagonal(o, o)
+        });
+
+      // UPDATE
+      var linkUpdate = linkEnter.merge(link);
+
+      // Transition back to the parent element position
+      linkUpdate.transition()
+        .duration(duration)
+        .attr('d', function (d) {
+          return diagonal(d, d.parent)
+        });
+
+      // Remove any exiting links
+      var linkExit = link.exit().transition()
+        .duration(duration)
+        .attr('d', function (d) {
+          var o = {
+            x: source.x,
+            y: source.y
+          }
+          return diagonal(o, o)
+        })
+        .remove();
+
+      // Store the old positions for transition.
+      nodes.forEach(function (d) {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+
+      // Creates a curved (diagonal) path from parent to the child nodes
+      function diagonal(s, d) {
+
+        path =
+          `M ${s.y} ${s.x}
+            C ${(s.y + d.y) / 2} ${s.x},
+              ${(s.y + d.y) / 2} ${d.x},
+              ${d.y} ${d.x}`
+
+        return path
+      }
+
+      // Toggle children on click.
+      function click(d) {
+        if (d.children) {
+          d._children = d.children;
+          d.children = null;
+        } else {
+          d.children = d._children;
+          d._children = null;
+        }
+        update(d);
+      }
+    }
+
+  }, 2000);
+
+
+
+
+  setTimeout(function () {
+    var data = Get_Chart3_Data();
+
+    console.log(moment(d3.min(data.map(d => d.day))));
+    console.log(moment(d3.max(data.map(d => d.day))));
+
+    var width = $('#chart2').parent().width(),
+      height = $('#chart2').parent().height();
+
+    margin = ({
+      top: 20,
+      right: 20,
+      bottom: 30,
+      left: 30
+    });
+
+    var s = d3.select('#chart2');
+
+    s.attrs({
+        'width': width,
+        'height': height,
+      })
+      .styles({
+        'border': '1px dotted #aaa'
+      });
+
+    //定義縮放比例
+    var scaleX = d3.scaleTime()
+      .domain([moment(d3.min(data.map(d => d.day))), moment(d3.max(data.map(d => d.day)))])
+      .range([0, width])
+    // .padding(1)
+    // .domain([
+    //   d3.map(data, function (it) {
+    //     return it.day;
+    //   }).keys()
+    // ])
+
+
+    /*Range內height跟,0的位置，會決定數值點是是從上為0還是下為0*/
+    var scaleY = d3.scaleLinear()
+      .range([height - margin.bottom, margin.top])
+      // .domain([0,d3.max(data, d => d.y)]).nice()
+      .domain([0, d3.max(data, d => d.count)]).nice()
+
+
+    var axisX = d3.axisBottom(scaleX)
+      .ticks(20)
+
+    var axisY = d3.axisLeft(scaleY)
+      .ticks(10)
+
+
+
+    //以x為主設定y0,y1
+    var area = d3.area()
+      .x(function (d) {
+        return scaleX(moment(d.day))
+      })
+      .y0(scaleY(0))
+      .y1(function (d) {
+        return scaleY(d.count)
+      })
+      .curve(d3.curveCatmullRom.alpha(0.5))
+
+    // var valueline = d3.line()
+    // .x(function(d) { return x(d.day); })
+    // .y(function(d) { return y(d.count); });
+
+
+    //以y為主設定x0,x1
+    // var area = d3.area()
+    //     .y(function(d) { return d.x; })
+    //     .x0(0)
+    //     .x1(function(d) { return d.y; });
+
+
+    // s.append("path")
+    // .data([data])
+    // .attr("class", "line")
+    // .attr("d", valueline);
+
+    s.append('path')
+      .attrs({
+        'd': area(data),
+        'stroke': '#c00',
+        'fill': 'rgba(255,0,0,.3)',
+        'transform': 'translate(' + margin.left + ',0)'
+      });
+
+
+    // s.selectAll("dot")
+    //     .data(data)
+    //   .enter().append("circle")
+    //     .attr("r", 3.5)
+    //     .attr("cx", function(d) { return scaleX(d.date); })
+    //     .attr("cy", function(d) { return scaleY(d.close); });
+
+
+    s.append('g')
+      .call(axisX)
+      .attrs({
+        transform: 'translate(' + margin.left + ',' + (height - margin.bottom) + ')'
+      })
+
+    s.append('g')
+      .call(axisY)
+      .attrs({
+        transform: `translate(${margin.left},0)`
+      })
+  }, 1000);
+</script>
+
+</html>

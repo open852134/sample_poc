@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+
+
+  <link rel="stylesheet" href="./assets/css/all.css">
+
+  <style>
+    .show-block {
+      position: fixed;
+      display: inline-blockl
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <img src="/assets/svg/4idps.svg" alt="">
+  </header>
+
+  <div class="row">
+    <div class="grid-12">
+      <div class="tab">
+        <a href="page_1.html" class="tablinks">Page1</a>
+        <a href="page_2.html" class="tablinks">Page2</a>
+        <a href="page_3.html" class="tablinks">Page3</a>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="row">
+    <div class="grid-12">
+      <h3>Default Data</h3>
+      <div class="table-block" id="chart1-block">
+        <table class="table"></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="grid-12">
+      <h3>Chart Demo - 1</h3>
+      <div class="chart-block">
+        <svg id="chart1"></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="grid-12">
+      <h3>Chart Demo - 2</h3>
+      <div class="chart-block" id="chart2-block">
+        <svg id="chart2"></svg>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="https://d3js.org/d3-selection.v1.js"></script>
+  <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
+  <script>
+    var filePath = './assets/csv/MachineTypeA-Table 1.csv';
+    var defaul_data = [];
+    d3.csv(filePath).then(function (data) {
+
+      defaul_data = data;
+
+      var sortAscending = true;
+      var table = d3.select('.table');
+      var titles = d3.keys(data[0]);
+      var headers = table.append('thead').append('tr')
+        .selectAll('th')
+        .data(titles).enter()
+        .append('th')
+        .text(function (d) {
+          return d;
+        })
+
+      var rows = table.append('tbody').selectAll('tr')
+        .data(data).enter()
+        .append('tr');
+      rows.selectAll('td')
+        .data(function (d) {
+          return titles.map(function (k) {
+            return {
+              'value': d[k],
+              'name': k
+            };
+          });
+        }).enter()
+        .append('td')
+        .attr('data-th', function (d) {
+          return d.name;
+        })
+        .text(function (d) {
+          return d.value;
+        });
+    });
+
+
+
+    /*
+      {SQR No: "12038", Title: "A", MachineType: "MchineA", S/N: "3109005", User Number: "6L15F00", …}
+      {SQR No: "12038", Title: "A", MachineType: "MchineA", S/N: "3109005", User Number: "6L15F00", …}
+      回傳格式
+      [
+        {
+          title:'A',
+          count:3,
+          items:['Axxx','Abbbb','Accc']
+        },
+        {
+          title:'B',
+          count:4,
+          items:['Axxx','Abbbb','Accc',,'Accc']
+        },
+      ]
+    */
+
+    function Get_Chart1_Data() {
+      var result = [];
+
+      defaul_data.forEach(function (element, index) {
+
+        let tmpobj = {};
+
+        if (element.Title != '') {
+          if (result.length <= 0) {
+            tmpobj.title = element.Title;
+            tmpobj.count = 1;
+          } else {
+            for (let i = 0; i < result.length; i++) {
+              if (result[i].title == element.Title) {
+                result[i].count += 1;
+                break;
+              }
+              if (result[i].title != element.Title) {
+                tmpobj.title = element.Title;
+                tmpobj.count = 1;
+              }
+            }
+          }
+          if (Object.keys(tmpobj).length > 0)
+            result.push(tmpobj);
+        }
+      });
+
+      return result;
+    }
+
+
+
+
+    /*
+    回傳資料格式
+    [
+      {
+        title:'M社',
+        count:10
+      },
+      {
+        title:'MI社',
+        count:50
+      }
+    ]
+    */
+    function Get_Chart2_Data() {
+      var result = []
+
+      defaul_data.forEach(function (element, index) {
+
+        let tmpobj = {};
+
+        if (element['User Number'] != '') {
+
+          if (result.length <= 0) {
+            tmpobj.Name = element['User Number'];
+            tmpobj.Count = 1;
+
+          } else {
+
+            // var tm = result.filter(function(item,index){
+
+            //   return item.Name  ==  element['User Number'];
+            //   console.log(itme);
+            // });
+
+            var isHaved = false;
+            var index = 0;
+
+            for (let i = 0; i < result.length; i++) {
+              if (result[i].Name == element['User Number']) {
+                isHaved = true;
+                index = i;
+              }
+            }
+
+            if (isHaved) {
+              result[index].Count += 1;
+            } else {
+              tmpobj.Name = element['User Number'];
+              tmpobj.Count = 1;
+            }
+
+
+            // if (result[i].title == element.Customer) {
+            //   result[i].count += 1;
+            //   break;
+            // }
+            // if (result[i].title != element.Customer) {
+            //   tmpobj.title = element.Customer;
+            //   tmpobj.count = 1;
+            // }
+
+          }
+
+
+          if (Object.keys(tmpobj).length > 0)
+            result.push(tmpobj);
+
+        }
+      });
+      return result;
+    }
+
+
+
+    setTimeout(function () {
+      /* Chart 1 */
+      var data = Get_Chart1_Data();
+
+      console.log(data);
+
+      /* 基本參數定義 */
+      var margin = {
+        top: 15,
+        right: 20,
+        bottom: 15,
+        left: 20
+      };
+      var width = $('#chart1').parent().width() - 60;
+      var height = $('#chart1').parent().height() - 60;
+      console.log(height);
+
+      //定義縮放比例
+      var scaleX = d3.scalePoint()
+        .padding(1)
+        .domain(
+          d3.map(data, function (it) {
+            return it.title;
+          }).keys()
+        )
+        .range([0, width])
+
+      var scaleY = d3.scaleLinear()
+        .domain([0, d3.max(data, (function (d) {
+          return d.count;
+        }))])
+        .range([height - 50, 0])
+
+      //定義資料顯示
+      var axisX = d3.axisBottom(scaleX)
+      var axisY = d3.axisLeft(scaleY).ticks(5)
+
+      //色碼定義
+      var color = d3.scaleLinear()
+        .domain([0, d3.max(data, (function (d) {
+          return d.count;
+        }))])
+        .range(["#89cfdb", "#d1d07c"]);
+
+
+      /* 選取物件 */
+      var s = d3.select('#chart1');
+      var div = d3.select("#chart1-block").append('div')
+        .attr("class", "tooltip show-block")
+        .style("opacity", 0);
+
+      /* 繪製SVG */
+      s.attrs({
+        'width': width,
+        'height': height,
+      })
+
+
+
+      var g = s.append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+      g.selectAll('rect.bar2')
+        .data(data)
+        .enter()
+        .append('rect')
+        .attrs({
+          'fill': function (d) {
+            return color(d.count)
+          },
+          'height': function (d) {
+            return (height - 50) - scaleY(d.count);
+          },
+          'width': 10,
+          'x': function (d) {
+            return scaleX(d.title) + 15
+          },
+          'y': function (d) {
+            return scaleY(d.count);
+          }
+        })
+        .styles({
+          'cursor': 'pointer'
+        })
+        .on("mouseover", function (d) {
+          div.html(`數量:${d.count}`)
+            .style("opacity", .9)
+            .style('position', 'absolute')
+
+            .style("left", (d3.event.pageX - document.getElementById("chart1").getBoundingClientRect().x + 10) +
+              "px")
+            .style("top", (d3.event.pageY - document.getElementById("chart1").getBoundingClientRect().y + 10) +
+              "px");
+        })
+        .on("mouseout", function (d) {
+          div.style("opacity", 0);
+        })
+
+      g.append('g')
+        .call(axisX)
+        .attrs({
+          transform: 'translate(' + margin.left + ',' + (height - 50) + ')'
+        })
+
+      g.append('g')
+        .call(axisY)
+        .attrs({
+          transform: 'translate(' + margin.left + ',0)'
+        })
+
+
+    }, 1500);
+
+
+
+
+
+
+
+    setTimeout(function () {
+
+
+      var dataset = {
+        "children":Get_Chart2_Data()
+      }
+
+      var margin = {
+        top: 15,
+        right: 20,
+        bottom: 15,
+        left: 20
+      };
+      var width = $('#chart1').parent().width() - 30;
+      var height = $('#chart1').parent().height() - 30;
+      var diameter = 600;
+      var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+      var bubble = d3.pack(dataset)
+        .size([width, height])
+        .padding(1.5);
+
+      var svg = d3.select("#chart2")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("class", "bubble");
+
+      var nodes = d3.hierarchy(dataset)
+        .sum(function (d) {
+          return d.Count;
+        });
+
+      var node = svg.selectAll(".node")
+        .data(bubble(nodes).descendants())
+        .enter()
+        .filter(function (d) {
+          return !d.children
+        })
+        .append("g")
+        .attr("class", "node")
+        .attr("transform", function (d) {
+          return "translate(" + d.x + "," + d.y + ")";
+        });
+
+      node.append("title")
+        .text(function (d) {
+          return d.Name + ": " + d.Count;
+        });
+
+      node.append("circle")
+        .attr("r", function (d) {
+          return d.r;
+        })
+        .style("fill", function (d, i) {
+          return color(i);
+        });
+
+      node.append("text")
+        .attr("dy", ".2em")
+        .style("text-anchor", "middle")
+        .text(function (d) {
+          return d.data.Name.substring(0, d.r / 3);
+        })
+        .attr("font-family", "sans-serif")
+        .attr("font-size", function (d) {
+          return d.r / 5;
+        })
+        .attr("fill", "white");
+
+      node.append("text")
+        .attr("dy", "1.3em")
+        .style("text-anchor", "middle")
+        .text(function (d) {
+          return d.data.Count;
+        })
+        .attr("font-family", "Gill Sans", "Gill Sans MT")
+        .attr("font-size", function (d) {
+          return d.r / 5;
+        })
+        .attr("fill", "white");
+
+      d3.select(self.frameElement)
+        .style("height", height + "px");
+    }, 1500);
+
+    dataset = {
+      "children": [{
+          "Name": "Olives",
+          "Count": 4319
+        },
+        {
+          "Name": "Tea",
+          "Count": 4159
+        },
+        {
+          "Name": "Mashed Potatoes",
+          "Count": 2583
+        },
+        {
+          "Name": "Boiled Potatoes",
+          "Count": 2074
+        },
+        {
+          "Name": "Milk",
+          "Count": 1894
+        },
+        {
+          "Name": "Chicken Salad",
+          "Count": 1809
+        },
+        {
+          "Name": "Vanilla Ice Cream",
+          "Count": 1713
+        },
+        {
+          "Name": "Cocoa",
+          "Count": 1636
+        },
+        {
+          "Name": "Lettuce Salad",
+          "Count": 1566
+        },
+        {
+          "Name": "Lobster Salad",
+          "Count": 1511
+        },
+        {
+          "Name": "Chocolate",
+          "Count": 1489
+        },
+        {
+          "Name": "Apple Pie",
+          "Count": 1487
+        },
+        {
+          "Name": "Orange Juice",
+          "Count": 1423
+        },
+        {
+          "Name": "American Cheese",
+          "Count": 1372
+        },
+        {
+          "Name": "Green Peas",
+          "Count": 1341
+        },
+        {
+          "Name": "Assorted Cakes",
+          "Count": 1331
+        },
+        {
+          "Name": "French Fried Potatoes",
+          "Count": 1328
+        },
+        {
+          "Name": "Potato Salad",
+          "Count": 1306
+        },
+        {
+          "Name": "Baked Potatoes",
+          "Count": 1293
+        },
+        {
+          "Name": "Roquefort",
+          "Count": 1273
+        },
+        {
+          "Name": "Stewed Prunes",
+          "Count": 1268
+        }
+      ]
+    };
+  </script>
+</body>
+
+</html>

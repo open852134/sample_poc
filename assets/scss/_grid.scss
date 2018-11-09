@@ -1,0 +1,24 @@
+$grid-columns: 12;
+
+
+.row{
+  padding-left: 60px;
+  padding-right: 60px;
+}
+
+
+@for $i from 1 through $grid-columns {
+  .grid-#{$i} {
+    width: percentage($i / $grid-columns);
+  }
+}
+
+
+// styles
+[class^='grid-'] {
+  //border: 1px solid;
+  box-sizing: border-box;
+  float: left;
+  padding: 1em 0;
+  text-align: center;
+}
