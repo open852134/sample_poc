@@ -12,8 +12,40 @@
 
   <style>
     .show-block {
-      position: fixed;
-      display: inline-blockl
+      position: absolute;
+      display: inline-blockl;
+      border: solid 1px silver;
+      border-radius: 5px;
+      padding: 5px 10px;
+      background-color: rgba(255, 230, 176, 0.8);
+      color: #3e3e3e;
+    }
+
+    .axis line,
+    .axis path,
+    rect.axis {
+      shape-rendering: crispEdges;
+      fill: none;
+      stroke: silver;
+    }
+
+    .axis text {
+      font: 10px sans-serif;
+      fill: gray;
+    }
+
+
+    .list {
+      display: flex;
+      flex-direction: row;
+      width: 230px;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    .list p {
+      width: 70px;
     }
   </style>
 </head>
@@ -130,26 +162,27 @@
 
       defaul_data.forEach(function (element, index) {
 
-        let tmpobj = {};
-
         if (element.Title != '') {
-          if (result.length <= 0) {
-            tmpobj.title = element.Title;
-            tmpobj.count = 1;
-          } else {
-            for (let i = 0; i < result.length; i++) {
-              if (result[i].title == element.Title) {
-                result[i].count += 1;
-                break;
-              }
-              if (result[i].title != element.Title) {
-                tmpobj.title = element.Title;
-                tmpobj.count = 1;
-              }
+
+          var index = 0;
+          var isHave = false;
+          var tmpobj = {};
+
+          for (let i = 0; i < result.length; i++) {
+            if (result[i].title == element.Title) {
+              index = i;
+              isHave = true;
             }
           }
-          if (Object.keys(tmpobj).length > 0)
+
+          if (!isHave) {
+            tmpobj.title = element.Title;
+            tmpobj.count = 1;
             result.push(tmpobj);
+          } else {
+            result[index].count += 1;
+          }
+
         }
       });
 
@@ -164,69 +197,47 @@
     [
       {
         title:'M社',
-        count:10
+        count:10,
+        SQR No:[]
       },
       {
         title:'MI社',
-        count:50
+        count:50,
+        SQR No:[]
       }
     ]
     */
     function Get_Chart2_Data() {
       var result = []
 
-      defaul_data.forEach(function (element, index) {
+      defaul_data.forEach(function (item, index) {
 
-        let tmpobj = {};
+        if (item['User Number'] != '') {
 
-        if (element['User Number'] != '') {
+          var tmpobj = {
+            Sqrno: [],
+          };
+          var isHaved = false;
+          var index = 0;
 
-          if (result.length <= 0) {
-            tmpobj.Name = element['User Number'];
-            tmpobj.Count = 1;
-
-          } else {
-
-            // var tm = result.filter(function(item,index){
-
-            //   return item.Name  ==  element['User Number'];
-            //   console.log(itme);
-            // });
-
-            var isHaved = false;
-            var index = 0;
-
-            for (let i = 0; i < result.length; i++) {
-              if (result[i].Name == element['User Number']) {
-                isHaved = true;
-                index = i;
-              }
+          for (let i = 0; i < result.length; i++) {
+            if (result[i].Name == item['User Number']) {
+              isHaved = true;
+              index = i;
             }
-
-            if (isHaved) {
-              result[index].Count += 1;
-            } else {
-              tmpobj.Name = element['User Number'];
-              tmpobj.Count = 1;
-            }
-
-
-            // if (result[i].title == element.Customer) {
-            //   result[i].count += 1;
-            //   break;
-            // }
-            // if (result[i].title != element.Customer) {
-            //   tmpobj.title = element.Customer;
-            //   tmpobj.count = 1;
-            // }
-
           }
 
-
-          if (Object.keys(tmpobj).length > 0)
+          if (isHaved) {
+            result[index].Count += 1;
+            result[index].Sqrno.push(item['SQR No']);
+          } else {
+            tmpobj.Name = item['User Number'];
+            tmpobj.Count = 1;
+            tmpobj.Sqrno.push(item['SQR No']);
             result.push(tmpobj);
-
+          }
         }
+
       });
       return result;
     }
@@ -237,8 +248,6 @@
       /* Chart 1 */
       var data = Get_Chart1_Data();
 
-      console.log(data);
-
       /* 基本參數定義 */
       var margin = {
         top: 15,
@@ -248,15 +257,19 @@
       };
       var width = $('#chart1').parent().width() - 60;
       var height = $('#chart1').parent().height() - 60;
-      console.log(height);
+
+
+      var view_N = 20; //一次最多顯示幾筆
+      var view_x = data.length / 2; //最少顯示一半數量
+
 
       //定義縮放比例
       var scaleX = d3.scalePoint()
-        .padding(1)
+        .padding(0.5)
         .domain(
           d3.map(data, function (it) {
             return it.title;
-          }).keys()
+          }).keys().slice(0, 20)
         )
         .range([0, width])
 
@@ -280,7 +293,7 @@
 
       /* 選取物件 */
       var s = d3.select('#chart1');
-      var div = d3.select("#chart1-block").append('div')
+      var div = d3.select("body").append('div')
         .attr("class", "tooltip show-block")
         .style("opacity", 0);
 
@@ -291,57 +304,150 @@
       })
 
 
+      var g = s.append("g").attr("transform", "translate(0," + margin.top + ")");
 
-      var g = s.append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      var drag = d3.drag()
+        .on("drag", dragmove)
+        .on("start", dragstart)
+        .on("end", dragend);
 
 
-      g.selectAll('rect.bar2')
-        .data(data)
-        .enter()
-        .append('rect')
+      g.append('rect')
         .attrs({
-          'fill': function (d) {
-            return color(d.count)
-          },
-          'height': function (d) {
-            return (height - 50) - scaleY(d.count);
-          },
-          'width': 10,
-          'x': function (d) {
-            return scaleX(d.title) + 15
-          },
-          'y': function (d) {
-            return scaleY(d.count);
-          }
+          width: width,
+          height: height,
+          fill: 'none',
+          stroke: 'none'
         })
-        .styles({
-          'cursor': 'pointer'
-        })
-        .on("mouseover", function (d) {
-          div.html(`數量:${d.count}`)
-            .style("opacity", .9)
-            .style('position', 'absolute')
+        .attr('pointer-events', 'all')
+        .call(drag);
 
-            .style("left", (d3.event.pageX - document.getElementById("chart1").getBoundingClientRect().x + 10) +
-              "px")
-            .style("top", (d3.event.pageY - document.getElementById("chart1").getBoundingClientRect().y + 10) +
-              "px");
-        })
-        .on("mouseout", function (d) {
-          div.style("opacity", 0);
-        })
+      var data_area = g.append('g');
+      var sel = data_area.selectAll('rect');
 
-      g.append('g')
+
+
+
+      function update(data) {
+        data_area.html('');
+        sel.data(data).enter()
+          .append('rect')
+          .attrs({
+            'fill': function (d) {
+              return color(d.count);
+            },
+            'height': function (d) {
+              return (height - 50) - scaleY(d.count)
+            },
+            'width': 30,
+            'x': function (d) {
+              return scaleX(d.title) + 5
+            },
+            'y': function (d) {
+              return scaleY(d.count);
+            }
+          })
+          .on("mouseover", function (d) {
+            // alert('in');
+            div.html(`數量:${d.count}`)
+              .style("opacity", .9)
+              .style('position', 'absolute')
+              .style("left", (d3.event.pageX + 10) + "px")
+              .style("top", (d3.event.pageY - document.getElementById("chart1").getBoundingClientRect().y - 10) +
+                "px");
+          })
+          .on("mouseout", function (d) {
+            // alert('out');
+            div.style("opacity", 0);
+          })
+      }
+
+
+      update(data.slice(0, 20));
+
+
+
+
+
+      function shift_slow(dx) {
+        var KeyAry = d3.map(data, function (it) {
+          return it.title;
+        }).keys()
+
+        view_x = view_x + (-dx) / 2;
+
+        if (view_x > (KeyAry.length - view_N)) view_x = (KeyAry.length - view_N);
+        if (view_x < 0) view_x = 0;
+
+        var view = KeyAry.slice(view_x, view_x + view_N);
+        var tdaya = data.slice(view_x, view_x + view_N);
+
+        scaleX.domain(view);
+        x_axis_el.call(axisX);
+        update(tdaya);
+      }
+
+
+      function dragstart() {}
+
+      function dragmove() {
+        shift_slow(d3.event.dx)
+      }
+
+      function dragend() {
+        data_area.selectAll('.grayed').remove();
+        var tdata = data.slice(view_x, view_x + view_N);
+        update(tdata);
+      }
+
+      // g.selectAll('rect.bar2')
+      //   .data(data)
+      //   .enter()
+      //   .append('rect')
+      //   .attrs({
+      //     'fill': function (d) {
+      //       return color(d.count)
+      //     },
+      //     'height': function (d) {
+      //       return (height - 50) - scaleY(d.count);
+      //     },
+      //     'width': 10,
+      //     'x': function (d) {
+      //       return scaleX(d.title) + 15
+      //     },
+      //     'y': function (d) {
+      //       return scaleY(d.count);
+      //     }
+      //   })
+      //   .styles({
+      //     'cursor': 'pointer'
+      //   })
+      //   .on("mouseover", function (d) {
+      //     div.html(`數量:${d.count}`)
+      //       .style("opacity", .9)
+      //       .style('position', 'absolute')
+
+      //       .style("left", (d3.event.pageX - document.getElementById("chart1").getBoundingClientRect().x + 10) +
+      //         "px")
+      //       .style("top", (d3.event.pageY - document.getElementById("chart1").getBoundingClientRect().y + 10) +
+      //         "px");
+      //   })
+      //   .on("mouseout", function (d) {
+      //     div.style("opacity", 0);
+      //   })
+
+      var x_axis_el = g.append('g')
         .call(axisX)
         .attrs({
-          transform: 'translate(' + margin.left + ',' + (height - 50) + ')'
+          transform: 'translate(' + margin.left + ',' + (height - 50) + ')',
+          class: 'axis'
         })
 
-      g.append('g')
+      var y_axis_el = g.append('g')
         .call(axisY)
         .attrs({
-          transform: 'translate(' + margin.left + ',0)'
+          transform: 'translate(' + margin.left + ',0)',
+          class: 'axis'
         })
 
 
@@ -357,7 +463,7 @@
 
 
       var dataset = {
-        "children":Get_Chart2_Data()
+        "children": Get_Chart2_Data()
       }
 
       var margin = {
@@ -370,6 +476,11 @@
       var height = $('#chart1').parent().height() - 30;
       var diameter = 600;
       var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+      var div = d3.select("body").append('div')
+        .attr("class", "tooltip show-block")
+        .style("opacity", 0);
+
 
       var bubble = d3.pack(dataset)
         .size([width, height])
@@ -395,11 +506,28 @@
         .attr("class", "node")
         .attr("transform", function (d) {
           return "translate(" + d.x + "," + d.y + ")";
-        });
+        })
+        .on("mouseover", function (d) {
+
+          var mHTML = '<div class="list">';
+          for (let i = 0; i < d.data.Sqrno.length; i++) {
+            mHTML += `<p>${d.data.Sqrno[i]}</p>`;
+          }
+          mHTML += '</div>';
+
+          div.html(`SQR No <br> ${mHTML}`)
+            .style("opacity", .9)
+            .style("left", (d3.event.pageX ) + "px")
+            .style("top", (d3.event.pageY) + "px");
+        })
+        .on("mouseout", function (d) {
+          // alert('out');
+          div.style("opacity", 0);
+        })
 
       node.append("title")
         .text(function (d) {
-          return d.Name + ": " + d.Count;
+          return d.data.Name + ": " + d.data.Count;
         });
 
       node.append("circle")
@@ -437,94 +565,6 @@
       d3.select(self.frameElement)
         .style("height", height + "px");
     }, 1500);
-
-    dataset = {
-      "children": [{
-          "Name": "Olives",
-          "Count": 4319
-        },
-        {
-          "Name": "Tea",
-          "Count": 4159
-        },
-        {
-          "Name": "Mashed Potatoes",
-          "Count": 2583
-        },
-        {
-          "Name": "Boiled Potatoes",
-          "Count": 2074
-        },
-        {
-          "Name": "Milk",
-          "Count": 1894
-        },
-        {
-          "Name": "Chicken Salad",
-          "Count": 1809
-        },
-        {
-          "Name": "Vanilla Ice Cream",
-          "Count": 1713
-        },
-        {
-          "Name": "Cocoa",
-          "Count": 1636
-        },
-        {
-          "Name": "Lettuce Salad",
-          "Count": 1566
-        },
-        {
-          "Name": "Lobster Salad",
-          "Count": 1511
-        },
-        {
-          "Name": "Chocolate",
-          "Count": 1489
-        },
-        {
-          "Name": "Apple Pie",
-          "Count": 1487
-        },
-        {
-          "Name": "Orange Juice",
-          "Count": 1423
-        },
-        {
-          "Name": "American Cheese",
-          "Count": 1372
-        },
-        {
-          "Name": "Green Peas",
-          "Count": 1341
-        },
-        {
-          "Name": "Assorted Cakes",
-          "Count": 1331
-        },
-        {
-          "Name": "French Fried Potatoes",
-          "Count": 1328
-        },
-        {
-          "Name": "Potato Salad",
-          "Count": 1306
-        },
-        {
-          "Name": "Baked Potatoes",
-          "Count": 1293
-        },
-        {
-          "Name": "Roquefort",
-          "Count": 1273
-        },
-        {
-          "Name": "Stewed Prunes",
-          "Count": 1268
-        }
-      ]
-    };
   </script>
 </body>
 
