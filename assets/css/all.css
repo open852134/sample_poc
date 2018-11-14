@@ -54,6 +54,9 @@ h6 {
   height: 700px;
   background-color: #f3f3f3;
   overflow: scroll; }
+  @media screen and (max-width: 650px) {
+    .chart-block {
+      height: 450px; } }
 
 .table-block {
   width: 100%;
@@ -87,6 +90,10 @@ h6 {
 .row {
   padding-left: 60px;
   padding-right: 60px; }
+  @media screen and (max-width: 650px) {
+    .row {
+      padding-left: 15px;
+      padding-right: 15px; } }
 
 .grid-1 {
   width: 8.33333%; }

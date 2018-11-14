@@ -4,6 +4,11 @@ $grid-columns: 12;
 .row{
   padding-left: 60px;
   padding-right: 60px;
+
+  @media screen and(max-width:650px){
+    padding-left: 15px;
+    padding-right: 15px;
+  }
 }
 
 

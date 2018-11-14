@@ -57,6 +57,11 @@ header{
   height: 700px;
   background-color:$chart-block-bcolr;
   overflow: scroll;
+
+
+  @media screen and (max-width:650px){
+    height: 450px;
+  }
 }
 
 .table-block{

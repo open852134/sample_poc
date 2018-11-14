@@ -331,11 +331,17 @@
     // append the svg object to the body of the page
     // appends a 'group' element to 'svg'
     // moves the 'group' element to the top left margin
+
+    var screen_width = $(window).width();
+    if(screen_width < 650){
+      width = 900;
+    }
+
     var svg = d3.select("#chart1")
       .attr("width", width)
       .attr("height", "auto")
       .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      .attr("transform", "translate(90," + margin.top + ")");
 
 
 
@@ -579,17 +585,17 @@
       height = $('#chart2').parent().height();
 
     margin = ({
-      top: 20,
-      right: 20,
-      bottom: 30,
-      left: 30
+      top: 40,
+      right: 40,
+      bottom: 60,
+      left: 60
     });
 
     var s = d3.select('#chart2');
 
     s.attrs({
-        'width': width,
-        'height': height,
+        'width': width ,
+        'height': height ,
       })
       .styles({
         'border': '1px dotted #aaa'
@@ -693,6 +699,29 @@
       .attrs({
         transform: `translate(${margin.left},0)`
       })
+
+    s.append('g')
+    .append('text')
+    .text('Date')
+    .attrs({
+    transform: 'translate(0,' + (height - margin.bottom) + ')'
+    })
+
+    s.append('g')
+    .append('text')
+    .text('Date')
+    .attrs({
+    transform: 'translate(0,' + (height - margin.bottom) + ')'
+    })
+
+    s.append('g')
+    .append('text')
+    .text('Qty')
+    .attrs({
+    transform: `translate(${margin.left -3}, ${(height -15) })`
+    })
+
+
   }, 1000);
 </script>
 

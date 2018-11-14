@@ -255,12 +255,31 @@
         bottom: 15,
         left: 20
       };
-      var width = $('#chart1').parent().width() - 60;
-      var height = $('#chart1').parent().height() - 60;
 
-
-      var view_N = 20; //一次最多顯示幾筆
+      var width = 0;
+      var height = 0;
+      var view_N = 0; //一次最多顯示幾筆
       var view_x = data.length / 2; //最少顯示一半數量
+
+      var screen_width = $(window).width();
+
+      if (screen_width > 650) {
+        width = $('#chart1').parent().width() - 60;
+        height = $('#chart1').parent().height() - 60;
+
+        view_N = 20; //一次最多顯示幾筆
+        view_x = data.length / 2; //最少顯示一半數量
+
+      } else {
+        width = $('#chart1').parent().width() - 5;
+        height = $('#chart1').parent().height() - 5;
+
+        view_N = 5; //一次最多顯示幾筆
+        view_x = data.length / 2; //最少顯示一半數量
+      }
+
+
+
 
 
       //定義縮放比例
@@ -269,7 +288,7 @@
         .domain(
           d3.map(data, function (it) {
             return it.title;
-          }).keys().slice(0, 20)
+          }).keys().slice(0, view_N)
         )
         .range([0, width])
 
@@ -363,7 +382,7 @@
       }
 
 
-      update(data.slice(0, 20));
+      update(data.slice(0, view_N));
 
 
 
@@ -517,7 +536,7 @@
 
           div.html(`SQR No <br> ${mHTML}`)
             .style("opacity", .9)
-            .style("left", (d3.event.pageX ) + "px")
+            .style("left", (d3.event.pageX) + "px")
             .style("top", (d3.event.pageY) + "px");
         })
         .on("mouseout", function (d) {
